@@ -4,7 +4,6 @@ from django.conf import settings
 class CommonArea(models.Model):
     
     # Áreas comunes disponibles para reservar (salón social, gimnasio, parqueadero, etc.)
-
     nombre = models.CharField(max_length=100, verbose_name="Nombre")
     descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
     capacidad = models.PositiveIntegerField(default=1, verbose_name="Capacidad (opcional)")
@@ -21,7 +20,6 @@ class CommonArea(models.Model):
 class Reservation(models.Model):
     
     # Reserva de un área común por un apartamento/residente.
-
     STATUS_PENDING = 'PENDING'
     STATUS_APPROVED = 'APPROVED'
     STATUS_REJECTED = 'REJECTED'
@@ -50,11 +48,14 @@ class Reservation(models.Model):
         verbose_name = 'Reserva'
         verbose_name_plural = 'Reservas'
         ordering = ['-created_at']
+        permissions = (
+        ('approve_reserva', 'Puede aprobar o rechazar reservas'),
+        ('view_reserva_all', 'Puede ver todas las reservas'),
+    )
 
     def __str__(self):
         return f"{self.area} - {self.fecha_inicio} to {self.fecha_fin} ({self.status})"
 
     def overlaps(self, other_start, other_end):
-        
         # Retorna True si se solapa con el rango
         return not (self.fecha_fin <= other_start or self.fecha_inicio >= other_end)

@@ -31,6 +31,10 @@ class Payment(BaseModel):
         indexes = [
             models.Index(fields=['apartamento', 'periodo']),
         ]
+        permissions = (
+        ('mark_pago', 'Puede marcar pago como completado'),
+        ('view_pago_all', 'Puede ver todos los pagos'),
+    )
 
     def __str__(self):
         return f"Pago {self.id} - {self.monto} - {self.status}"

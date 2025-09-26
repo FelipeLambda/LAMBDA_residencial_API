@@ -3,7 +3,6 @@ from django.utils import timezone
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-
 from .models import PQRS
 from .serializers import PqrsSerializer
 
@@ -12,7 +11,7 @@ class PqrsListCreateAPIView(APIView):
 
     def get(self, request):
         qs = PQRS.objects.all()
-        if not request.user.is_staff:
+        if not request.user.has_perm('Pqrs.view_pqrs_all'):
             qs = qs.filter(usuario=request.user)
         serializer = PqrsSerializer(qs, many=True)
         return Response(serializer.data)
@@ -29,15 +28,16 @@ class PqrsDetailAPIView(APIView):
 
     def get(self, request, pk):
         item = get_object_or_404(PQRS, pk=pk)
-        if not request.user.is_staff and item.usuario != request.user:
+        # Si no tiene permiso para ver todas, sólo ve la suya
+        if not request.user.has_perm('Pqrs.view_pqrs_all') and item.usuario != request.user:
             return Response({'detail': 'No tiene permiso.'}, status=status.HTTP_403_FORBIDDEN)
         return Response(PqrsSerializer(item).data)
 
     def put(self, request, pk):
         item = get_object_or_404(PQRS, pk=pk)
-        # Solo admin puede responder o cambiar estado
-        if not request.user.is_staff:
-            return Response({'detail': 'Solo administradores pueden responder/actualizar.'}, status=status.HTTP_403_FORBIDDEN)
+        if not request.user.has_perm('Pqrs.respond_pqrs'):
+            return Response({'detail': 'No tiene permiso para responder/actualizar PQRS.'},
+                            status=status.HTTP_403_FORBIDDEN)
         respuesta = request.data.get('respuesta', None)
         estado = request.data.get('estado', None)
         if respuesta:

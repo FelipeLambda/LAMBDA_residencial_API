@@ -34,6 +34,11 @@ class MaintenanceRequest(BaseModel):
         verbose_name = 'Solicitud de mantenimiento'
         verbose_name_plural = 'Solicitudes de mantenimiento'
         ordering = ['-creado']
+        permissions = (
+        ('assign_maintenance', 'Puede asignar solicitudes de mantenimiento'),
+        ('complete_maintenance', 'Puede marcar mantenimiento como completado'),
+        ('view_maintenance_all', 'Puede ver todas las solicitudes de mantenimiento'),
+    )
 
     def __str__(self):
         return f"Mantenimiento {self.id} - {self.get_estado_display()}"

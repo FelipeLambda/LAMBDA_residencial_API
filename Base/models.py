@@ -10,7 +10,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 def normalize_path(path: str) -> str:
-    
     # Normaliza una ruta/nombre de archivo
     if not path:
         return path
@@ -25,9 +24,7 @@ def normalize_path(path: str) -> str:
 
 
 def archivo_upload_to(instance, filename: str) -> str:
-    
    # Genera la ruta de almacenamiento para el archivo usando `ruta_archivo` si está definida en la instancia.
-    
     base = getattr(instance, 'ruta_archivo', '') or ''
     base = str(base).strip('/')
     full = f"{base}/{filename}" if base else filename
@@ -35,9 +32,7 @@ def archivo_upload_to(instance, filename: str) -> str:
 
 
 class BaseModel(models.Model):
-    
     # Modelo base abstracto con campos comunes.
-    
     creado = models.DateTimeField(auto_now_add=True, verbose_name=_("Fecha de creación"))
     modificado = models.DateTimeField(auto_now=True, verbose_name=_("Fecha de modificación"))
     is_active = models.BooleanField(default=True, verbose_name=_("Activo"))
@@ -61,7 +56,6 @@ class BaseModel(models.Model):
 class Archivo(BaseModel):
     
     # Modelo flexible para almacenar archivos en el storage configurado.
-
     archivo = models.FileField(upload_to=archivo_upload_to, verbose_name=_("Archivo"), max_length=400)
     ruta_archivo = models.CharField(max_length=300, verbose_name=_("Ruta de archivo"), null=True, blank=True)
     nombre_archivo = models.CharField(max_length=300, verbose_name=_("Nombre del archivo"))
@@ -78,9 +72,7 @@ class Archivo(BaseModel):
         return (self.nombre_archivo or (self.url_archivo or str(self.archivo))) or ""
 
     def get_file_url(self) -> Optional[str]:
-        
         # Devuelve URL desde `url_archivo` o desde el storage configurado.
-
         try:
             if self.url_archivo:
                 return self.url_archivo

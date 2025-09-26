@@ -22,6 +22,10 @@ class Visit(BaseModel):
         verbose_name = 'Visita'
         verbose_name_plural = 'Visitas'
         ordering = ['-fecha_ingreso']
+        permissions = (
+        ('authorize_visit', 'Puede autorizar visitas'),
+        ('view_visits_all', 'Puede ver todas las visitas'),
+    )
 
     def __str__(self):
         return f"{self.visitante_nombre} -> Apt {self.apartamento_id if self.apartamento_id else 'N/A'} ({self.fecha_ingreso.date()})"

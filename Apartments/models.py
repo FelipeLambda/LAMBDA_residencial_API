@@ -17,6 +17,9 @@ class Apartamento(BaseModel):
         verbose_name = 'Apartamento'
         verbose_name_plural = 'Apartamentos'
         ordering = ['numero']
+        permissions = (
+        ('manage_apartamentos', 'Puede gestionar apartamentos'),
+    )
 
     def __str__(self):
-        return f"Apt. {self.numero} {(' - ' + self.torre) if self.torre else ''}".strip()
+        return f"Apt. {self.numero} {(' - ' + self.torre) if self.torre else ''}".strip().title()

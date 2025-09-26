@@ -40,6 +40,10 @@ class PQRS(BaseModel):
         verbose_name = 'PQRS'
         verbose_name_plural = 'PQRS'
         ordering = ['-creado']
+        permissions = (
+        ('respond_pqrs', 'Puede responder y cerrar PQRS'),
+        ('view_pqrs_all', 'Puede ver todas las PQRS'),
+    )
 
     def __str__(self):
         return f"{self.get_tipo_display()} - {self.asunto[:60]}"
