@@ -4,14 +4,24 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Payment
 from .serializers import PaymentSerializer
+from Users.permissions import (
+    CanMarkPayments,
+    CanViewAllPayments,
+    PaymentOwnerOrManager
+)
 
 class PaymentListCreateAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        qs = Payment.objects.all()
-        if not request.user.has_perm('Payments.view_pago_all'):
-            qs = qs.filter(usuario=request.user)
+        # Filtrar pagos según permisos
+        if request.user.has_perm('Payments.view_pago_all'):
+            # Admin puede ver todos los pagos
+            qs = Payment.objects.all()
+        else:
+            # Usuario normal solo ve sus propios pagos
+            qs = Payment.objects.filter(usuario=request.user)
+
         serializer = PaymentSerializer(qs, many=True)
         return Response(serializer.data)
 
@@ -22,32 +32,31 @@ class PaymentListCreateAPIView(APIView):
         return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
 
 class PaymentDetailAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, PaymentOwnerOrManager]
 
     def get(self, request, pk):
-        p = get_object_or_404(Payment, pk=pk)
-        # Si no tiene permiso para ver todos, sólo puede ver su pago
-        if not request.user.has_perm('Payments.view_pago_all') and p.usuario != request.user:
-            return Response({'detail': 'No tienes permiso para ver este pago.'}, status=status.HTTP_403_FORBIDDEN)
-        return Response(PaymentSerializer(p).data)
+        payment = get_object_or_404(Payment, pk=pk)
+        self.check_object_permissions(request, payment)
+        return Response(PaymentSerializer(payment).data)
 
     def put(self, request, pk):
-        p = get_object_or_404(Payment, pk=pk)
+        payment = get_object_or_404(Payment, pk=pk)
+
+        # Solo admin puede modificar pagos
         if not request.user.has_perm('Payments.mark_pago'):
-            return Response({'detail': 'No tiene permiso para modificar este pago.'}, status=status.HTTP_403_FORBIDDEN)
-        serializer = PaymentSerializer(p, data=request.data, partial=True)
+            return Response({'detail': 'No tiene permiso para modificar este pago.'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        serializer = PaymentSerializer(payment, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
 
 class PaymentMarkPaidAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, CanMarkPayments]
 
     def post(self, request, pk):
         payment = get_object_or_404(Payment, pk=pk)
-        if not request.user.has_perm('Payments.mark_pago'):
-            return Response({'detail': 'No tiene permiso para marcar pago como completado.'},
-                            status=status.HTTP_403_FORBIDDEN)
         referencia = request.data.get('referencia', None)
         fecha = request.data.get('fecha_pago', None)
         payment.mark_as_paid(fecha=fecha, referencia=referencia)

@@ -2,14 +2,12 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-
 from .serializers import UsuarioSerializer, UsuarioLoginSerializer
 from .token_serializers import CustomTokenObtainPairSerializer
-
+from .email import send_password_reset_email, send_password_changed_notification
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -18,15 +16,13 @@ Usuario = get_user_model()
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     
-    # Vista que devuelve access + refresh token con claims personalizados
- 
+    # Vista que devuelve access + refresh token
     serializer_class = CustomTokenObtainPairSerializer
 
 
 class UsuarioRegisterAPIView(APIView):
     
-    # Registro de nuevos usuarios (AllowAny).
-
+    # Registro de nuevos usuarios
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -40,10 +36,8 @@ class UsuarioRegisterAPIView(APIView):
 
 class UsuarioListAPIView(APIView):
     
-    # Lista de usuarios (solo admin).
-
+    # Lista de usuarios
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
-
     def get(self, request):
         usuarios = Usuario.objects.all()
         serializer = UsuarioSerializer(usuarios, many=True)
@@ -58,7 +52,6 @@ class UsuarioListAPIView(APIView):
 class UsuarioDetailAPIView(APIView):
     
     # Obtener / actualizar un usuario concreto.
-
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self, pk):
@@ -88,9 +81,7 @@ class UsuarioDetailAPIView(APIView):
 class UsuarioMeAPIView(APIView):
     
     # Obtener o actualizar el perfil del usuario autenticado.
-
     permission_classes = [permissions.IsAuthenticated]
-
     def get(self, request):
         serializer = UsuarioSerializer(request.user)
         data = serializer.data
@@ -109,9 +100,7 @@ class UsuarioMeAPIView(APIView):
 class UsuarioLogoutAPIView(APIView):
     
     # Logout mediante blacklisting del refresh token.
-
     permission_classes = [permissions.IsAuthenticated]
-
     def post(self, request):
         refresh_token = request.data.get('refresh', None)
         if not refresh_token:
@@ -127,7 +116,6 @@ class UsuarioLogoutAPIView(APIView):
 class PasswordResetRequestAPIView(APIView):
     
     #Solicitar token de reset de contraseña.
-    
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -141,26 +129,30 @@ class PasswordResetRequestAPIView(APIView):
             return Response({"detail": "Si el correo existe, se enviaron instrucciones."}, status=status.HTTP_200_OK)
 
         # crear token y guardar
-        user.create_reset_token(hours_valid=2)  # token válido 2 horas por defecto
-        
+        user.create_reset_token(hours_valid=2)
+        # Enviar email con el token
+        email_sent = send_password_reset_email(user, user.reset_password_token)
 
         if settings.DEBUG:
-            # en desarrollo devolvemos el token para pruebas rápidas
             return Response({
                 "detail": "Token generado (DEBUG: se muestra el token).",
                 "reset_token": user.reset_password_token,
-                "expires_at": user.reset_password_token_expires_at
+                "expires_at": user.reset_password_token_expires_at,
+                "email_sent": email_sent
             }, status=status.HTTP_200_OK)
 
-        return Response({"detail": "Si el correo existe, se enviaron instrucciones."}, status=status.HTTP_200_OK)
+        # confirmamos que se procesó la solicitud
+        if email_sent:
+            return Response({"detail": "Si el correo existe, se enviaron instrucciones."}, status=status.HTTP_200_OK)
+        else:
+            # Error enviando email
+            return Response({"detail": "Si el correo existe, se enviaron instrucciones."}, status=status.HTTP_200_OK)
 
 
 class PasswordResetConfirmAPIView(APIView):
     
     #Confirmar cambio de contraseña usando token.
-
     permission_classes = [permissions.AllowAny]
-
     def post(self, request):
         token = request.data.get('token')
         new_password = request.data.get('password')
@@ -180,4 +172,7 @@ class PasswordResetConfirmAPIView(APIView):
         user.reset_password_token = None
         user.reset_password_token_expires_at = None
         user.save(update_fields=['password', 'reset_password_token', 'reset_password_token_expires_at'])
+        # Enviar notificación de cambio de contraseña
+        send_password_changed_notification(user)
+
         return Response({"detail": "Contraseña actualizada correctamente."}, status=status.HTTP_200_OK)
