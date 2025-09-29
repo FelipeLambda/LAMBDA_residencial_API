@@ -10,11 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-import os 
-import ssl
-import certifi
-from pathlib import Path 
-from datetime import timedelta 
+import os
+from pathlib import Path
+from datetime import timedelta
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -46,13 +44,13 @@ DJANGO_APPS = [
 
 LOCAL_APPS = [
     'Base',
-    'Users',
-    'Reservations',
-    'Apartments',
-    'Payments',
+    'Usuarios',
+    'Reservas',
+    'Apartamentos',
+    'Pagos',
     'Pqrs',
-    'Visits',
-    'Maintenance',
+    'Visitas',
+    'Mantenimiento',
 ]
 
 THIRD_PARTY_APPS = [
@@ -111,7 +109,7 @@ DATABASES = {
     }
 }
 
-AUTH_USER_MODEL = 'Users.Usuario'
+AUTH_USER_MODEL = 'Usuarios.Usuario'
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -180,7 +178,6 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS').lower() == 'true'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-EMAIL_ENCRYPTION = os.getenv('EMAIL_ENCRYPTION')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f'{EMAIL_HOST_USER}')
 EMAIL_SSL_CONTEXT = os.getenv('EMAIL_SSL_CONTEXT', 'True').lower() == 'true'
 

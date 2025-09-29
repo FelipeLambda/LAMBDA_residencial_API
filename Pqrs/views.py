@@ -5,11 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import PQRS
 from .serializers import PqrsSerializer
-from Users.permissions import (
-    CanRespondPQRS,
-    CanViewAllPQRS,
-    PQRSOwnerOrManager
-)
+from Usuarios.permissions import PQRSOwnerOrManager
 
 class PqrsListCreateAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]

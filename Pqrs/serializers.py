@@ -5,15 +5,15 @@ from django.contrib.auth import get_user_model
 Usuario = get_user_model()
 
 class PqrsSerializer(serializers.ModelSerializer):
-    created_at = serializers.DateTimeField(source='creado', read_only=True)
-    updated_at = serializers.DateTimeField(source='modificado', read_only=True)
+    creado = serializers.DateTimeField(read_only=True)
+    modificado = serializers.DateTimeField(read_only=True)
     usuario = serializers.PrimaryKeyRelatedField(read_only=True)
-    respondido_por = serializers.PrimaryKeyRelatedField(queryset=Usuario.objects.all(), required=False, allow_null=True)
+    respondido_por = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = PQRS
         fields = [
             'id', 'usuario', 'apartamento', 'tipo', 'asunto', 'descripcion',
-            'estado', 'respuesta', 'respondido_por', 'fecha_respuesta', 'created_at', 'updated_at'
+            'estado', 'respuesta', 'respondido_por', 'fecha_respuesta', 'creado', 'modificado'
         ]
-        read_only_fields = ['created_at', 'updated_at', 'respondido_por', 'fecha_respuesta']
+        read_only_fields = ['creado', 'modificado', 'respondido_por', 'fecha_respuesta']
