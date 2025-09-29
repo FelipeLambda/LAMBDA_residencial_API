@@ -1,0 +1,43 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos temporales de pruebas / coverage
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+
+# --- Django ---
+# Archivos de base de datos locales
+db.sqlite3
+*.sqlite3
+
+# --- Entornos virtuales ---
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Logs ---
+*.log
+*.pot
+
+# --- IDEs y editores ---
+.vscode/
+.idea/
+*.swp
+*~
+
+# --- Archivos de sistema ---
+.DS_Store
+Thumbs.db
+
+# --- Configuración local ---
+# Por ejemplo, variables de entorno
+.env
+*.local
