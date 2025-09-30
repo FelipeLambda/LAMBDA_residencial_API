@@ -1,6 +1,9 @@
-from django.db import models
+# Django
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
+
+# Project
 from Base.models import BaseModel
 
 class PQRS(BaseModel):

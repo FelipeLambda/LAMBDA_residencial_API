@@ -1,7 +1,7 @@
-from django.db import models
 from django.conf import settings
-from Base.models import BaseModel
+from django.db import models
 from django.utils import timezone
+from Base.models import BaseModel
 
 class MaintenanceRequest(BaseModel):
     STATUS_REQUESTED = 'REQUESTED'

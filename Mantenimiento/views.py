@@ -1,49 +1,46 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import status, permissions
+from rest_framework import status, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from Base.views import MantenimientoPagination
+from LAMBDA_residencial_API.decorators import permission_required
 from .models import MaintenanceRequest
 from .serializers import MaintenanceRequestSerializer
-from Usuarios.permissions import MaintenanceOwnerOrManager
 
-class MaintenanceListCreateAPIView(APIView):
+class MaintenanceListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = MaintenanceRequestSerializer
+    pagination_class = MantenimientoPagination
 
-    def get(self, request):
+    def get_queryset(self):
         # Filtrar solicitudes según permisos
-        if request.user.has_perm('Mantenimiento.view_maintenance_all'):
+        if self.request.user.has_perm('Mantenimiento.view_maintenance_all'):
             # Admin puede ver todas las solicitudes
-            qs = MaintenanceRequest.objects.all()
+            return MaintenanceRequest.objects.all()
         else:
             # Usuario normal solo ve sus propias solicitudes
-            qs = MaintenanceRequest.objects.filter(solicitado_por=request.user)
+            return MaintenanceRequest.objects.filter(solicitado_por=self.request.user)
 
-        serializer = MaintenanceRequestSerializer(qs, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = MaintenanceRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        req = serializer.save(solicitado_por=request.user)
-        return Response(MaintenanceRequestSerializer(req).data, status=status.HTTP_201_CREATED)
+    def perform_create(self, serializer):
+        serializer.save(solicitado_por=self.request.user)
 
 
 class MaintenanceDetailAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated, MaintenanceOwnerOrManager]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, pk):
         maintenance = get_object_or_404(MaintenanceRequest, pk=pk)
-        self.check_object_permissions(request, maintenance)
-        return Response(MaintenanceRequestSerializer(maintenance).data)
 
-    def put(self, request, pk):
-        maintenance = get_object_or_404(MaintenanceRequest, pk=pk)
-
-        # Solo admin puede asignar/modificar mantenimientos
-        if not request.user.has_perm('Mantenimiento.assign_maintenance'):
-            return Response({'detail': 'No tienes permiso para modificar este recurso.'},
+        # Permitir acceso si es quien solicitó o tiene permiso para ver todas
+        if maintenance.solicitado_por != request.user and not request.user.has_perm('Mantenimiento.view_maintenance_all'):
+            return Response({'detail': 'No tiene permiso para ver esta solicitud.'},
                             status=status.HTTP_403_FORBIDDEN)
 
+        return Response(MaintenanceRequestSerializer(maintenance).data)
+
+    @permission_required('Mantenimiento.assign_maintenance')
+    def put(self, request, pk):
+        maintenance = get_object_or_404(MaintenanceRequest, pk=pk)
         serializer = MaintenanceRequestSerializer(maintenance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -53,14 +50,9 @@ class MaintenanceDetailAPIView(APIView):
 class MaintenanceCompleteAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @permission_required('Mantenimiento.complete_maintenance')
     def post(self, request, pk):
         maintenance = get_object_or_404(MaintenanceRequest, pk=pk)
-
-        # Solo admin puede completar mantenimientos
-        if not request.user.has_perm('Mantenimiento.complete_maintenance'):
-            return Response({'detail': 'No tienes permiso para completar este mantenimiento.'},
-                            status=status.HTTP_403_FORBIDDEN)
-
         costo_final = request.data.get('costo_final', None)
         maintenance.mark_completed(costo_final=costo_final)
         return Response({'detail': 'Mantenimiento marcado como completado.'}, status=status.HTTP_200_OK)

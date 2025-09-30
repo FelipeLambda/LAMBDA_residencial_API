@@ -1,7 +1,7 @@
-from rest_framework import serializers
-from .models import Visit
-from Apartamentos.models import Apartamento
 from django.contrib.auth import get_user_model
+from rest_framework import serializers
+from Apartamentos.models import Apartamento
+from .models import Visit
 
 Usuario = get_user_model()
 

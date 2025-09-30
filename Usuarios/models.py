@@ -1,8 +1,8 @@
 from datetime import timedelta
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
 class UserManager(BaseUserManager):
     def create_user(self, correo, nombres, apellidos, password=None, **extra_fields):

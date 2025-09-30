@@ -2,14 +2,15 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from rest_framework import status, permissions
+from rest_framework import status, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+from Base.views import UsuariosPagination
 from .serializers import UsuarioSerializer
 from .token_serializers import CustomTokenObtainPairSerializer
 from .email import send_password_reset_email, send_password_changed_notification
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.tokens import RefreshToken
 
 Usuario = get_user_model()
 
@@ -34,19 +35,24 @@ class UsuarioRegisterAPIView(APIView):
         return Response(data, status=status.HTTP_201_CREATED)
 
 
-class UsuarioListAPIView(APIView):
-    
+class UsuarioListAPIView(generics.ListAPIView):
+
     # Lista de usuarios
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
-    def get(self, request):
-        usuarios = Usuario.objects.all()
-        serializer = UsuarioSerializer(usuarios, many=True)
+    queryset = Usuario.objects.all()
+    serializer_class = UsuarioSerializer
+    pagination_class = UsuariosPagination
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
         # asegurar que password no esté en la salida
-        out = []
-        for item in serializer.data:
-            item.pop('password', None)
-            out.append(item)
-        return Response(out)
+        if isinstance(response.data, dict) and 'results' in response.data:
+            for item in response.data['results']:
+                item.pop('password', None)
+        elif isinstance(response.data, list):
+            for item in response.data:
+                item.pop('password', None)
+        return response
 
 
 class UsuarioDetailAPIView(APIView):

@@ -1,6 +1,6 @@
+from django.utils import timezone
 from rest_framework import serializers
 from .models import Reservation, CommonArea
-from django.utils import timezone
 
 class CommonAreaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -23,7 +23,6 @@ class ReservationSerializer(serializers.ModelSerializer):
     def validate(self, data):
         
         #Validaciones
-
         start = data.get('fecha_inicio')
         end = data.get('fecha_fin')
         area = data.get('area')

@@ -1,56 +1,58 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import status, permissions
+from rest_framework import status, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from Base.views import VisitasPagination
+from LAMBDA_residencial_API.decorators import permission_required
 from .models import Visit
 from .serializers import VisitSerializer
-from Usuarios.permissions import VisitOwnerOrManager
 
 
-class VisitListCreateAPIView(APIView):
+class VisitListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = VisitSerializer
+    pagination_class = VisitasPagination
 
-    def get(self, request):
+    def get_queryset(self):
         # Filtrar visitas según permisos
-        if request.user.has_perm('Visitas.view_visits_all'):
+        if self.request.user.has_perm('Visitas.view_visits_all'):
             # Admin puede ver todas las visitas
-            qs = Visit.objects.all()
+            return Visit.objects.all()
         else:
             # Usuario normal solo ve sus propias visitas
-            qs = Visit.objects.filter(ingresado_por=request.user)
+            return Visit.objects.filter(ingresado_por=self.request.user)
 
-        serializer = VisitSerializer(qs, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = VisitSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        visit = serializer.save(ingresado_por=request.user)
-        return Response(VisitSerializer(visit).data, status=status.HTTP_201_CREATED)
+    def perform_create(self, serializer):
+        serializer.save(ingresado_por=self.request.user)
 
 
 class VisitDetailAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated, VisitOwnerOrManager]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, pk):
         visit = get_object_or_404(Visit, pk=pk)
-        self.check_object_permissions(request, visit)
+
+        # Permitir acceso si es quien ingresó la visita o tiene permiso para ver todas
+        if visit.ingresado_por != request.user and not request.user.has_perm('Visitas.view_visits_all'):
+            return Response({'detail': 'No tiene permiso para ver esta visita.'},
+                            status=status.HTTP_403_FORBIDDEN)
+
         return Response(VisitSerializer(visit).data)
 
     def put(self, request, pk):
         visit = get_object_or_404(Visit, pk=pk)
 
         # Solo el creador o admin pueden editar
-        if (visit.ingresado_por != request.user and
-            not request.user.has_perm('Visitas.view_visits_all')):
-            return Response({'detail': 'No tienes permiso para editar esta visita.'},
+        if visit.ingresado_por != request.user and not request.user.has_perm('Visitas.view_visits_all'):
+            return Response({'detail': 'No tiene permiso para editar esta visita.'},
                             status=status.HTTP_403_FORBIDDEN)
 
         serializer = VisitSerializer(visit, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
 
 class VisitAuthorizeAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -59,9 +61,8 @@ class VisitAuthorizeAPIView(APIView):
         visit = get_object_or_404(Visit, pk=pk)
 
         # Solo el autorizado por la visita o quien tenga permiso puede autorizar
-        if (request.user != visit.autoriza_por and
-            not request.user.has_perm('Visitas.authorize_visit')):
-            return Response({'detail': 'No tienes permiso para autorizar esta visita.'},
+        if request.user != visit.autoriza_por and not request.user.has_perm('Visitas.authorize_visit'):
+            return Response({'detail': 'No tiene permiso para autorizar esta visita.'},
                             status=status.HTTP_403_FORBIDDEN)
 
         visit.autorizado = True
