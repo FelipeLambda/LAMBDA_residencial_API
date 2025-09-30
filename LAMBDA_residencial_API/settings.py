@@ -10,9 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-import os 
-from pathlib import Path 
-from datetime import timedelta 
+import os
+from pathlib import Path
+from datetime import timedelta
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -44,13 +44,13 @@ DJANGO_APPS = [
 
 LOCAL_APPS = [
     'Base',
-    'Users',
-    'Reservations',
-    'Apartments',
-    'Payments',
+    'Usuarios',
+    'Reservas',
+    'Apartamentos',
+    'Pagos',
     'Pqrs',
-    'Visits',
-    'Maintenance',
+    'Visitas',
+    'Mantenimiento',
 ]
 
 THIRD_PARTY_APPS = [
@@ -109,7 +109,7 @@ DATABASES = {
     }
 }
 
-AUTH_USER_MODEL = 'Users.Usuario'
+AUTH_USER_MODEL = 'Usuarios.Usuario'
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -130,26 +130,19 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
+# Internationalizacion
 LANGUAGE_CODE = 'es-co'
 TIME_ZONE = 'America/Bogota'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
+# Archivos estáticos
 STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS AUTORIZATIONS
@@ -177,3 +170,16 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
+
+# CONFIGURACION DE EMAIL
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f'{EMAIL_HOST_USER}')
+EMAIL_SSL_CONTEXT = os.getenv('EMAIL_SSL_CONTEXT', 'True').lower() == 'true'
+
+# Frontend URL para enlaces en emails
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')

@@ -1,5 +1,9 @@
-from django.db import models
+# Django
 from django.conf import settings
+from django.db import models
+from django.utils import timezone
+
+# Project
 from Base.models import BaseModel
 
 class PQRS(BaseModel):
@@ -26,7 +30,7 @@ class PQRS(BaseModel):
     ]
 
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='pqrs', verbose_name='Remitente')
-    apartamento = models.ForeignKey('Apartments.Apartamento', on_delete=models.SET_NULL, null=True, blank=True, related_name='pqrs', verbose_name='Apartamento relacionado')
+    apartamento = models.ForeignKey('Apartamentos.Apartamento', on_delete=models.SET_NULL, null=True, blank=True, related_name='pqrs', verbose_name='Apartamento relacionado')
     tipo = models.CharField(max_length=20, choices=TYPE_CHOICES, verbose_name='Tipo')
     asunto = models.CharField(max_length=200, verbose_name='Asunto')
     descripcion = models.TextField(verbose_name='Descripción')
@@ -51,6 +55,6 @@ class PQRS(BaseModel):
     def add_response(self, texto, responder):
         self.respuesta = texto
         self.respondido_por = responder
-        self.fecha_respuesta = models.DateTimeField.auto_now  
+        self.fecha_respuesta = timezone.now()
         self.estado = self.STATUS_RESOLVED
         self.save()
