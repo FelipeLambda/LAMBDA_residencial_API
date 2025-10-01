@@ -1,8 +1,8 @@
-from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from rest_framework import status, permissions, generics
-from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from Base.views import ApartamentosPagination
 from LAMBDA_residencial_API.decorators import permission_required
 from .models import Apartamento

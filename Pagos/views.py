@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import status, permissions, generics
-from rest_framework.views import APIView
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from Base.views import PagosPagination
 from LAMBDA_residencial_API.decorators import permission_required
 from .models import Payment
@@ -13,12 +13,9 @@ class PaymentListCreateAPIView(generics.ListCreateAPIView):
     pagination_class = PagosPagination
 
     def get_queryset(self):
-        # Filtrar pagos según permisos
         if self.request.user.has_perm('Pagos.view_pago_all'):
-            # Admin puede ver todos los pagos
             return Payment.objects.all()
         else:
-            # Usuario normal solo ve sus propios pagos
             return Payment.objects.filter(usuario=self.request.user)
 
     def perform_create(self, serializer):
@@ -31,7 +28,6 @@ class PaymentDetailAPIView(APIView):
     def get(self, request, pk):
         payment = get_object_or_404(Payment, pk=pk)
 
-        # Permitir acceso si es propietario del pago o tiene permiso para ver todos
         if payment.usuario != request.user and not request.user.has_perm('Pagos.view_pago_all'):
             return Response({'detail': 'No tiene permiso para ver este pago.'},
                             status=status.HTTP_403_FORBIDDEN)

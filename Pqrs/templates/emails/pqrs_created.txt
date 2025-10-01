@@ -1,0 +1,24 @@
+{{ site_name }}
+
+Nueva {{ tipo }} Recibida
+========================
+
+Se ha creado una nueva {{ tipo }} que requiere atención:
+
+Detalles:
+---------
+Tipo: {{ tipo }}
+Asunto: {{ pqrs.asunto }}
+Usuario: {{ usuario.get_full_name }}
+Email: {{ usuario.correo }}
+{% if pqrs.apartamento %}Apartamento: {{ pqrs.apartamento }}{% endif %}
+Estado: {{ pqrs.get_estado_display }}
+Fecha: {{ pqrs.creado|date:"d/m/Y H:i" }}
+
+Descripción:
+{{ pqrs.descripcion }}
+
+Ver y Responder: {{ admin_url }}
+
+---
+Este es un correo automático de {{ site_name }}. Por favor no responda a este mensaje.

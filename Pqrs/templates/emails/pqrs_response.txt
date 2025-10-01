@@ -1,0 +1,29 @@
+{{ site_name }}
+
+Respuesta a tu {{ tipo }}
+=========================
+
+Hola {{ usuario.get_full_name }},
+
+Hemos respondido a tu {{ tipo }}:
+
+Detalles:
+---------
+Asunto: {{ pqrs.asunto }}
+Estado: {{ pqrs.get_estado_display }}
+Fecha de respuesta: {{ pqrs.fecha_respuesta|date:"d/m/Y H:i" }}
+{% if pqrs.respondido_por %}Respondido por: {{ pqrs.respondido_por.get_full_name }}{% endif %}
+
+Respuesta:
+----------
+{{ pqrs.respuesta }}
+
+Tu solicitud original fue:
+---------------------------
+{{ pqrs.descripcion }}
+
+Ver detalles completos: {{ pqrs_url }}
+
+---
+Gracias por usar {{ site_name }}.
+Este es un correo automático. Por favor no responda a este mensaje.

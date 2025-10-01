@@ -1,0 +1,26 @@
+{{ site_name }}
+
+❌ Reserva Rechazada
+====================
+
+Hola {{ usuario.get_full_name }},
+
+Lamentablemente, tu reserva no pudo ser aprobada.
+
+Detalles de la Reserva:
+------------------------
+Área Común: {{ area.nombre }}
+Fecha de inicio: {{ reserva.fecha_inicio|date:"d/m/Y H:i" }}
+Fecha de fin: {{ reserva.fecha_fin|date:"d/m/Y H:i" }}
+{% if reserva.apartamento %}Apartamento: {{ reserva.apartamento }}{% endif %}
+{% if approved_by %}Revisado por: {{ approved_by.get_full_name }}{% endif %}
+{% if reserva.notas %}Notas: {{ reserva.notas }}{% endif %}
+
+❌ RESERVA NO APROBADA
+Puedes contactar con la administración para más información o intentar reservar en otro horario.
+
+Ver detalles: {{ reserva_url }}
+
+---
+Para más información, contacta con la administración.
+Este es un correo automático. Por favor no responda a este mensaje.
