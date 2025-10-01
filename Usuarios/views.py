@@ -1,16 +1,16 @@
 from django.conf import settings
-from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import status, permissions, generics
-from rest_framework.views import APIView
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 from Base.views import UsuariosPagination
+from .email import send_password_changed_notification, send_password_reset_email, send_welcome_email
 from .serializers import UsuarioSerializer
 from .token_serializers import CustomTokenObtainPairSerializer
-from .email import send_password_reset_email, send_password_changed_notification
 
 Usuario = get_user_model()
 
@@ -23,13 +23,15 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class UsuarioRegisterAPIView(APIView):
     
-    # Registro de nuevos usuarios
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = UsuarioSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        # Enviar email de bienvenida
+        send_welcome_email(user)
+
         data = UsuarioSerializer(user).data
         data.pop('password', None)
         return Response(data, status=status.HTTP_201_CREATED)
@@ -37,7 +39,6 @@ class UsuarioRegisterAPIView(APIView):
 
 class UsuarioListAPIView(generics.ListAPIView):
 
-    # Lista de usuarios
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
@@ -56,8 +57,7 @@ class UsuarioListAPIView(generics.ListAPIView):
 
 
 class UsuarioDetailAPIView(APIView):
-    
-    # Obtener / actualizar un usuario concreto.
+
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self, pk):
@@ -85,8 +85,7 @@ class UsuarioDetailAPIView(APIView):
 
 
 class UsuarioMeAPIView(APIView):
-    
-    # Obtener o actualizar el perfil del usuario autenticado.
+
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
         serializer = UsuarioSerializer(request.user)
@@ -120,8 +119,7 @@ class UsuarioLogoutAPIView(APIView):
 
 
 class PasswordResetRequestAPIView(APIView):
-    
-    #Solicitar token de reset de contraseña.
+
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -131,12 +129,10 @@ class PasswordResetRequestAPIView(APIView):
         try:
             user = Usuario.objects.get(correo=correo)
         except Usuario.DoesNotExist:
-            # No revelar la existencia de la cuenta: responder igual (mejor seguridad)
+            # No revelar la existencia de la cuenta: responder igual 
             return Response({"detail": "Si el correo existe, se enviaron instrucciones."}, status=status.HTTP_200_OK)
 
-        # crear token y guardar
         user.create_reset_token(hours_valid=2)
-        # Enviar email con el token
         email_sent = send_password_reset_email(user, user.reset_password_token)
 
         if settings.DEBUG:
@@ -151,13 +147,11 @@ class PasswordResetRequestAPIView(APIView):
         if email_sent:
             return Response({"detail": "Si el correo existe, se enviaron instrucciones."}, status=status.HTTP_200_OK)
         else:
-            # Error enviando email
             return Response({"detail": "Si el correo existe, se enviaron instrucciones."}, status=status.HTTP_200_OK)
 
 
 class PasswordResetConfirmAPIView(APIView):
-    
-    #Confirmar cambio de contraseña usando token.
+
     permission_classes = [permissions.AllowAny]
     def post(self, request):
         token = request.data.get('token')
@@ -178,7 +172,6 @@ class PasswordResetConfirmAPIView(APIView):
         user.reset_password_token = None
         user.reset_password_token_expires_at = None
         user.save(update_fields=['password', 'reset_password_token', 'reset_password_token_expires_at'])
-        # Enviar notificación de cambio de contraseña
         send_password_changed_notification(user)
 
         return Response({"detail": "Contraseña actualizada correctamente."}, status=status.HTTP_200_OK)

@@ -1,11 +1,16 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import status, permissions, generics
-from rest_framework.views import APIView
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from Base.views import ReservasPagination
 from LAMBDA_residencial_API.decorators import permission_required
-from .models import Reservation, CommonArea
-from .serializers import ReservationSerializer, CommonAreaSerializer
+from .email import (
+    send_reservation_approved_notification,
+    send_reservation_created_notification,
+    send_reservation_rejected_notification,
+)
+from .models import CommonArea, Reservation
+from .serializers import CommonAreaSerializer, ReservationSerializer
 
 class CommonAreaListCreateAPIView(generics.ListCreateAPIView):
     queryset = CommonArea.objects.all()
@@ -30,6 +35,8 @@ class ReservationCreateAPIView(APIView):
         serializer = ReservationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         reservation = serializer.save(created_by=request.user)
+        send_reservation_created_notification(reservation)
+
         return Response(ReservationSerializer(reservation).data, status=status.HTTP_201_CREATED)
 
 class ReservationListAPIView(generics.ListAPIView):
@@ -42,14 +49,11 @@ class ReservationListAPIView(generics.ListAPIView):
         apartamento_id = self.request.query_params.get('apartamento')
         status_filter = self.request.query_params.get('status')
 
-        # Filtrar reservas según permisos
         if self.request.user.has_perm('Reservas.view_reserva_all'):
             qs = Reservation.objects.all()
         else:
-            # Usuario normal solo ve sus propias reservas
             qs = Reservation.objects.filter(created_by=self.request.user)
 
-        # Aplicar filtros adicionales
         if area_id:
             qs = qs.filter(area_id=area_id)
         if apartamento_id:
@@ -78,13 +82,11 @@ class ReservationDetailAPIView(APIView):
     def put(self, request, pk):
         reserva = self.get_object(pk)
 
-        # Solo el creador puede editar si está pendiente, o admin siempre
         if (reserva.created_by != request.user and
             not request.user.has_perm('Reservas.approve_reserva')):
             return Response({'detail': 'No tienes permiso para editar esta reserva.'},
                             status=status.HTTP_403_FORBIDDEN)
 
-        # Solo se puede editar si está pendiente, a menos que sea admin
         if (reserva.status != Reservation.STATUS_PENDING and
             not request.user.has_perm('Reservas.approve_reserva')):
             return Response({'detail': 'No se puede editar una reserva aprobada/rechazada.'},
@@ -98,7 +100,6 @@ class ReservationDetailAPIView(APIView):
     def delete(self, request, pk):
         reserva = self.get_object(pk)
 
-        # Solo el creador o admin pueden cancelar
         if (reserva.created_by != request.user and
             not request.user.has_perm('Reservas.approve_reserva')):
             return Response({'detail': 'No tiene permiso para cancelar esta reserva.'},
@@ -136,9 +137,15 @@ class ReservationApproveAPIView(APIView):
             reserva.status = Reservation.STATUS_APPROVED
             reserva.approved_by = request.user
             reserva.save(update_fields=['status', 'approved_by'])
+
+            send_reservation_approved_notification(reserva)
+
             return Response({'detail': 'Reserva aprobada.'}, status=status.HTTP_200_OK)
 
         reserva.status = Reservation.STATUS_REJECTED
         reserva.approved_by = request.user
         reserva.save(update_fields=['status', 'approved_by'])
+
+        send_reservation_rejected_notification(reserva)
+
         return Response({'detail': 'Reserva rechazada.'}, status=status.HTTP_200_OK)

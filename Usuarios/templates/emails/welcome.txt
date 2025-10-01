@@ -1,0 +1,30 @@
+{{ site_name }}
+
+¡Bienvenido!
+============
+
+Hola {{ user.get_full_name }},
+
+¡Bienvenido a {{ site_name }}! Nos alegra tenerte con nosotros.
+
+Tu cuenta ha sido creada exitosamente y ya puedes acceder a todos nuestros servicios.
+
+¿Qué puedes hacer ahora?
+-------------------------
+✓ Reservar áreas comunes (salón social, gimnasio, etc.)
+✓ Realizar pagos de administración
+✓ Enviar PQRS (Peticiones, Quejas, Reclamos y Sugerencias)
+✓ Solicitar mantenimiento
+✓ Gestionar visitas
+✓ Ver información de tu apartamento
+
+Información de tu cuenta:
+--------------------------
+Email: {{ user.correo }}
+
+Iniciar sesión: {{ login_url }}
+
+---
+Gracias por ser parte de {{ site_name }}.
+Si tienes alguna pregunta, no dudes en contactarnos.
+Este es un correo automático. Por favor no responda a este mensaje.

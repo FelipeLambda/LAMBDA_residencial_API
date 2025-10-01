@@ -17,7 +17,6 @@ class UsuarioSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         is_staff = validated_data.pop('is_staff', False)
         if is_staff:
-            # create_superuser espera correo, nombres, apellidos y password
             user = Usuario.objects.create_superuser(password=password, **validated_data)
         else:
             user = Usuario.objects.create_user(password=password, **validated_data)

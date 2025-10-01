@@ -1,6 +1,6 @@
 from django.utils import timezone
 from rest_framework import serializers
-from .models import Reservation, CommonArea
+from .models import CommonArea, Reservation
 
 class CommonAreaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,7 +22,6 @@ class ReservationSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         
-        #Validaciones
         start = data.get('fecha_inicio')
         end = data.get('fecha_fin')
         area = data.get('area')
@@ -34,7 +33,6 @@ class ReservationSerializer(serializers.ModelSerializer):
         if start >= end:
             raise serializers.ValidationError("La fecha de inicio debe ser anterior a la fecha de fin.")
 
-        # Reserva sea a futuro
         if start < timezone.now():
             raise serializers.ValidationError("La fecha de inicio debe ser en el futuro.")
 

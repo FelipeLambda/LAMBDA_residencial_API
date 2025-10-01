@@ -1,3 +1,4 @@
+import os
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -49,3 +50,35 @@ class MaintenanceRequest(BaseModel):
         if costo_final is not None:
             self.costo_final = costo_final
         self.save()
+
+
+def maintenance_attachment_path(instance, filename):
+    return f'maintenance/{instance.maintenance_request.id}/{filename}'
+
+
+class MaintenanceAttachment(models.Model):
+    maintenance_request = models.ForeignKey(MaintenanceRequest, on_delete=models.CASCADE, related_name='attachments', verbose_name='Solicitud de mantenimiento')
+    archivo = models.FileField(upload_to=maintenance_attachment_path, verbose_name='Archivo')
+    nombre_original = models.CharField(max_length=255, verbose_name='Nombre original')
+    tamaño = models.IntegerField(verbose_name='Tamaño (bytes)', help_text='Tamaño en bytes')
+    tipo_contenido = models.CharField(max_length=100, blank=True, null=True, verbose_name='Tipo de contenido')
+    subido_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='Subido por')
+    subido_en = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de subida')
+    es_evidencia_final = models.BooleanField(default=False, verbose_name='Es evidencia final', help_text='Marca si es evidencia de trabajo completado')
+
+    class Meta:
+        db_table = 'maintenance_attachments'
+        verbose_name = 'Adjunto de mantenimiento'
+        verbose_name_plural = 'Adjuntos de mantenimiento'
+        ordering = ['-subido_en']
+
+    def __str__(self):
+        return f"{self.nombre_original} - Mantenimiento {self.maintenance_request.id}"
+
+    @property
+    def extension(self):
+        return os.path.splitext(self.nombre_original)[1].lower()
+
+    @property
+    def tamaño_mb(self):
+        return round(self.tamaño / (1024 * 1024), 2)

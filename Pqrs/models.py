@@ -1,9 +1,7 @@
-# Django
+import os
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-
-# Project
 from Base.models import BaseModel
 
 class PQRS(BaseModel):
@@ -58,3 +56,35 @@ class PQRS(BaseModel):
         self.fecha_respuesta = timezone.now()
         self.estado = self.STATUS_RESOLVED
         self.save()
+
+
+def pqrs_attachment_path(instance, filename):
+    return f'pqrs/{instance.pqrs.id}/{filename}'
+
+
+class PQRSAttachment(models.Model):
+    """Archivos adjuntos para PQRS"""
+    pqrs = models.ForeignKey(PQRS, on_delete=models.CASCADE, related_name='attachments', verbose_name='PQRS')
+    archivo = models.FileField(upload_to=pqrs_attachment_path, verbose_name='Archivo')
+    nombre_original = models.CharField(max_length=255, verbose_name='Nombre original')
+    tamaño = models.IntegerField(verbose_name='Tamaño (bytes)', help_text='Tamaño en bytes')
+    tipo_contenido = models.CharField(max_length=100, blank=True, null=True, verbose_name='Tipo de contenido')
+    subido_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name='Subido por')
+    subido_en = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de subida')
+
+    class Meta:
+        db_table = 'pqrs_attachments'
+        verbose_name = 'Adjunto de PQRS'
+        verbose_name_plural = 'Adjuntos de PQRS'
+        ordering = ['-subido_en']
+
+    def __str__(self):
+        return f"{self.nombre_original} - PQRS {self.pqrs.id}"
+
+    @property
+    def extension(self):
+        return os.path.splitext(self.nombre_original)[1].lower()
+
+    @property
+    def tamaño_mb(self):
+        return round(self.tamaño / (1024 * 1024), 2)

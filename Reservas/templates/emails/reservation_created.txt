@@ -1,0 +1,26 @@
+{{ site_name }}
+
+Reserva Creada Exitosamente
+============================
+
+Hola {{ usuario.get_full_name }},
+
+Tu reserva ha sido creada exitosamente y está pendiente de aprobación.
+
+Detalles de la Reserva:
+------------------------
+Área Común: {{ area.nombre }}
+Fecha de inicio: {{ reserva.fecha_inicio|date:"d/m/Y H:i" }}
+Fecha de fin: {{ reserva.fecha_fin|date:"d/m/Y H:i" }}
+{% if reserva.apartamento %}Apartamento: {{ reserva.apartamento }}{% endif %}
+Estado: {{ reserva.get_status_display }}
+{% if reserva.notas %}Notas: {{ reserva.notas }}{% endif %}
+
+⏳ PENDIENTE DE APROBACIÓN
+Tu reserva será revisada por la administración. Te notificaremos cuando sea aprobada o rechazada.
+
+Ver detalles: {{ reserva_url }}
+
+---
+Gracias por usar {{ site_name }}.
+Este es un correo automático. Por favor no responda a este mensaje.
